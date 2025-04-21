@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"      // Für String-Formatierung
+	"fmt" // Für String-Formatierung
 	"log"
 	"net/http"
+	"os" // Added for environment variables
 	"strconv"
-	"strings"  // Für String-Funktionen
+	"strings" // Für String-Funktionen
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -22,15 +23,36 @@ type App struct {
 // Initialize baut die DB-Verbindung anhand der übergebenen Parameter auf.
 // Falls ein Parameter leer ist, wird ein Fallback auf Standardwerte verwendet.
 func (a *App) Initialize(user, password, dbname string) {
-	
+
+	// Get host and port from environment variables or use defaults
+	host := os.Getenv("APP_DB_HOST")
+	if host == "" {
+		host = "localhost"
+	}
+
+	port := os.Getenv("APP_DB_PORT")
+	if port == "" {
+		port = "5432"
+	}
+
 	// Aufbau des Connection-Strings im URL-Format
-	connectionString := fmt.Sprintf("postgres://%s:%s@localhost:5432/%s?sslmode=disable", user, password, dbname)
+	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		user, password, host, port, dbname)
+
+	log.Printf("Connecting to database: %s:%s", host, port)
 
 	var err error
 	a.DB, err = sql.Open("postgres", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Test the connection
+	err = a.DB.Ping()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	log.Println("Successfully connected to database")
 
 	a.Router = mux.NewRouter()
 	a.initializeRoutes()
