@@ -1,6 +1,7 @@
 # Go Microservice
 
 [![Build Status](https://github.com/YasCay/go-microservice/actions/workflows/go.yml/badge.svg)](https://github.com/YasCay/go-microservice/actions/workflows/go.yml)
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=YasCay_go-microservice&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=YasCay_go-microservice)
 
 A RESTful API microservice for product management built with Go.
 
