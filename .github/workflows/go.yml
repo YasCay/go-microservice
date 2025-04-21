@@ -13,32 +13,18 @@ env:
   APP_DB_USERNAME: postgres
   APP_DB_PASSWORD: postgres
   APP_DB_NAME: postgres
-  SONAR_PROJECT_KEY: YasCay_go-microservice
-  SONAR_ORGANIZATION: yascay
 
 jobs:
   build:
     name: Build and Test Code
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-
-    # Cache Go modules to speed up the build
-    - name: Go Cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
+    - uses: actions/checkout@v3
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: 1.21
-        cache: false # Disabling built-in cache since we're using our custom cache step
 
     # Start postgresql docker container
     - name: Start postgresql Container
@@ -47,15 +33,9 @@ jobs:
     - name: Build
       run: go build -v ./...
 
-    - name: Test with coverage
-      run: go test -v -coverprofile=coverage.out -covermode=count ./...
-
-    - name: Save coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: coverage.out
-          
+    - name: Test
+      run: go test -v ./...
+      
   sonarCloud:
     needs: build
     name: SonarCloud Code Analysis
@@ -67,16 +47,7 @@ jobs:
           # Disabling shallow clone is recommended for improving relevancy of reporting
           fetch-depth: 0
       
-      - name: Download coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
-          path: .
-      
-      # Using the recommended SonarQube scan action instead of the deprecated one
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5.0.0
+      - uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
