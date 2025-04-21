@@ -21,12 +21,24 @@ jobs:
     name: Build and Test Code
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+
+    # Cache Go modules to speed up the build
+    - name: Go Cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: 1.21
+        cache: false # Disabling built-in cache since we're using our custom cache step
 
     # Start postgresql docker container
     - name: Start postgresql Container
@@ -42,6 +54,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
+        path: coverage.out
           
   sonarCloud:
     needs: build
@@ -58,6 +71,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-report
+          path: .
       
       # Using the recommended SonarQube scan action instead of the deprecated one
       - name: SonarCloud Scan
